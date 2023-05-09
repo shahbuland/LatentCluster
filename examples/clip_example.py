@@ -30,12 +30,11 @@ except:
     embs = joblib.load("embed.joblib")["embeddings"]
 
 embs = clear_tailing_zeros(embs)
+
 # Do reduction if it has not already been done
-#try:
-reducer = UMAPReducer().load("reducer.joblib")
-embs = reducer(embs)
 try:
-    pass
+    reducer = UMAPReducer().load("reducer.joblib")
+    embs = reducer(embs)
 except:
     print("Fitting UMAP from scratch")
     reducer = UMAPReducer()
