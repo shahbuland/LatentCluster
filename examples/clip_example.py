@@ -42,9 +42,9 @@ except:
     reducer.save("reducer.joblib")
 
 # Do visualization
-from LatentCluster.visualization.pygame_vis import PointTextVis
+from LatentCluster.visualization.pygame_vis import PointVis
 from LatentCluster.utils import random_sample
 
 print("Running visualization")
 embs, dataset = random_sample((embs, dataset), 5000)
-game = PointTextVis(embs, dataset, width = 1900,height = 1024)
+game = PointVis(embs, dataset, width = 1900,height = 1024)
