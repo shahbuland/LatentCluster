@@ -52,7 +52,7 @@ class CLIPEncoder(Encoder):
                 images,
                 return_tensors = 'pt'
             )
-            return [features['pixel_values']]
+            return features['pixel_values']
 
     def forward(self, *inputs):
         if self.no_grad:
@@ -66,7 +66,7 @@ class CLIPEncoder(Encoder):
             input_ids, attention_mask = inputs
             res = self.model.get_text_features(input_ids, attention_mask)
         else:
-            pixel_values = inputs
+            pixel_values = torch.stack(inputs)
             res = self.model.get_image_features(pixel_values)
 
         return res

@@ -39,12 +39,12 @@ class BaseEmbedder:
         self.fp = fp
         self.device = device
 
-        precision_types = {
+        self.precision_types = {
             "fp16" : np.float16,
             "fp32" : np.float32
         }
 
-        self.res_arr = np.empty((len(self.dataset), self.model.d_model), dtype = precision_types[precision])
+        self.res_arr = np.empty((len(self.dataset), self.model.d_model), dtype = self.precision_types[precision])
         self.progress = 0
 
     def get_embedding():
@@ -54,10 +54,19 @@ class BaseEmbedder:
         """
         Process model outputs into something that can be added to self.res_arr
         """
-        if self.precision == "fp16":
-            x = x.half()
+
+        if type(x) is torch.Tensor:
+            if self.precision == "fp16":
+                x = x.half()
+            
+            return x.cpu().numpy()
+        elif type(x) is np.ndarray:
+            x = np.astype(self.precision_types[self.precision])
+        else:
+            raise ValueError("Error: Model output cannot be processed by embedder")
         
-        return x.cpu().numpy()
+        return x
+
 
     def res_empty(self, start: int, end: int) -> bool:
         """
@@ -78,15 +87,21 @@ class BaseEmbedder:
             self.dataset, batch_size = self.chunk_size, shuffle = False,
             collate_fn = self.model.preprocess
         )
+
+        is_seq = lambda x : type(x) is list or type(x) is tuple
+
         # Iterate through the dataset in chunks
         for i, inputs in tqdm(enumerate(loader), total = len(loader)):
             if not self.res_empty(self.progress, self.progress + self.chunk_size):
                 self.progress += self.chunk_size
                 continue
 
-            inputs = [inp_.to(self.device) for inp_ in inputs]
-            
-            embeddings = self.model(*inputs)
+            if is_seq(inputs):
+                inputs = [inp_.to(self.device) for inp_ in inputs]
+            else:
+                inputs = inputs.to(self.device)
+
+            embeddings = self.model(*inputs if is_seq(inputs) else inputs)
             embeddings = self.postprocess(embeddings)    
         
             # Update the result array with the embeddings
